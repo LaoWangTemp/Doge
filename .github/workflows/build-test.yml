@@ -1,0 +1,58 @@
+name: build-test
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  PUBSPEC: "pubspec.yaml"
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["ci"]
+    types:
+      - completed
+  push:
+    branches:
+      - "master"
+    paths:
+      - ".github/workflows/build-test.yml"
+
+jobs:
+  pre:
+    runs-on: ubuntu-24.04
+    outputs:
+      pubspec: ${{ env.PUBSPEC }}
+      target: ${{ env.TARGET }}
+    steps:
+      - run: echo "Bypass GitHub Action Restriction"
+
+  build-mobile:
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        target: [ios, android]
+        include:
+          - target: ios
+            platform: "build ios --release --no-codesign"
+          - target: android
+            platform: "build apk --release"
+
+  build-test:
+    needs:
+      - pre
+    strategy:
+      matrix:
+        target: [ios, android]
+        include:
+          - target: ios
+            platform: "macos-latest"
+          - target: android
+            platform: "macos-latest"
+    uses: ./.github/workflows/build.yml
+    with:
+      path: ${{ needs.pre.outputs.pubspec }}
+      target: ${{ matrix.target }}
+      platform: ${{ matrix.platform }}

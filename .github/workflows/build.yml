@@ -1,0 +1,40 @@
+name: build
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        default: 'pubspec.yaml'
+        required: true
+        type: string
+      target:
+        required: true
+        type: string
+        description: "Build target (android, ios, linux, macos, windows, web)"
+      platform:
+        required: true
+        type: string
+        description: "Running Platform"
+
+jobs:
+  ready:
+    uses: ./.github/workflows/get-info.yml
+    with:
+      path: ${{ inputs.path }}
+      target: ${{ inputs.target }}
+
+  build:
+    runs-on: ${{ inputs.platform }}
+    needs:
+      - ready
+    steps:
+      - uses: actions/checkout@v4
+        run: |
+          RELEASE_NAME="${{ needs.ready.outputs.name_lower }}"
+          PREFIX="${{ needs.ready.outputs.release }}"
+          BIN="$RELEASE_NAME-${{ needs.ready.outputs.version }}-${{ inputs.target }}.zip"
+
+          echo $RELEASE_NAME
+          echo $PREFIX
+          echo $BIN
+        shell: bash
