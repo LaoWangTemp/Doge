@@ -82,7 +82,7 @@ jobs:
           echo "$RELEASE"
           echo "$BIN"
           ls -al
-          gh release upload ${{ needs.ready.outputs.version }} "$RELEASE.img" --clobber
+          gh release upload ${{ needs.ready.outputs.version }} "$RELEASE.dmg" --clobber
         shell: bash
         name: Upload(mac/ios img)
 
