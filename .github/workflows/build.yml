@@ -81,6 +81,38 @@ jobs:
           echo $PREFIX
           echo $BIN
         shell: bash
+      - if: ${{ inputs.platform == 'macos-latest' }}
+        run: |
+          BIN="${{ needs.ready.outputs.name_full }}.app"
+          RELEASE="${{ needs.ready.outputs.name_full }}-${{ needs.ready.outputs.version }}-${{ inputs.target }}.img"
+
+          mv "${{ needs.ready.outputs.release }}" "$BIN"
+          hdiutil create -volname "${{ needs.ready.outputs.name_full }}" -srcfolder "$BIN" -ov -format UDZO "$RELEASE"
+          gh release upload ${{ needs.ready.outputs.version }} "$RELEASE" --clobber
+        shell: bash
+        name: Upload(mac/ios img)
+
+      - 
+        if: ${{ inputs.target == 'linux' || inputs.target == 'web'}}
+        run: |
+          RELEASE="${{ needs.ready.outputs.name_full }}-${{ needs.ready.outputs.version }}-${{ inputs.target }}.zip"
+          cd "${{ needs.ready.outputs.release }}" && zip -r "$RELEASE" ./*
+          gh release upload ${{ needs.ready.outputs.version }} "$RELEASE" --clobber
+
+        shell: bash
+        name: Upload(linux/web)
+
+      - 
+        if: ${{ inputs.target == 'android' }}
+        run: |
+          RELEASE="${{ needs.ready.outputs.name_full }}-${{ needs.ready.outputs.version }}-${{ inputs.target }}.apk"
+
+          mv "{{ needs.ready.outputs.release }}" "$RELEASE"
+          gh release upload ${{ needs.ready.outputs.version }} "$RELEASE" --clobber
+
+        shell: bash
+        name: Upload(android apk)
+
       - if: ${{ inputs.target == 'windows' }}
         run: |
           $zip = "${{ needs.ready.outputs.name_full }}-${{ needs.ready.outputs.version }}-${{ inputs.target }}.zip"
@@ -93,6 +125,6 @@ jobs:
           cd (Split-Path -Path "${{ needs.ready.outputs.release }}" -Parent)
           Move-Item -Path "Release" -Destination "${{ needs.ready.outputs.name_full }}"
           Compress-Archive -Path "${{ needs.ready.outputs.name_full }}" -DestinationPath $zip -CompressionLevel Optimal
-          gh release upload "${{ needs.ready.outputs.version }}" $zip --clobber
+          gh release upload "${{ needs.ready.outputs.version }}" "$zip" --clobber
         shell: pwsh
         name: Upload(windows zip)
