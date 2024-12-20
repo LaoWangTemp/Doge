@@ -34,7 +34,7 @@ jobs:
   ready:
     needs:
       - pre
-    uses: ./.github/workflows/utils/get-version.yml@master
+    uses: ./.github/workflows/utils/get-version.yml
     with:
       pub_path: ${{ needs.pre.outputs.pubspec }}
 
