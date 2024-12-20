@@ -80,9 +80,18 @@ jobs:
         shell: bash
       - if: ${{ inputs.target == 'windows' }}
         run: |
-          $repoName = "${{ needs.ready.outputs.name_lower }}"
+          $zip = "${{ needs.ready.outputs.name_full }}-${{ needs.ready.outputs.version }}-${{ inputs.target }}.zip"
           $prefix = "${{ needs.ready.outputs.release }}"
-          $bin = "$repoName-${{ needs.ready.outputs.version }}-${{ inputs.target }}.zip"
+          $repoName = "${{ needs.ready.outputs.name_full }}"
 
+          cd "${{ needs.ready.outputs.release }}"
+          Move-Item -Path "${{ needs.ready.outputs.name_lower }}.exe" "${{ needs.ready.outputs.name_full }}.exe"
+
+          ./SignTool/signtool.exe sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /a /f signingCert.pfx /p "${{ secrets.WINDOWS_PFX_PASSWD }}" "${{ needs.ready.outputs.name_full }}.exe"
+
+          cd (Split-Path -Path $prefix -Parent)
+          Move-Item -Path "Release" -Destination "$repoName"
+          Compress-Archive -Path "$repoName" -DestinationPath $zip -CompressionLevel Optimal
+          gh release upload ${{ needs.ready.outputs.version }} $zip --clobber
         shell: pwsh
         name: Upload(windows zip)
