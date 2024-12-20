@@ -20,6 +20,8 @@ on:
         type: string
         description: "Running Platform"
 
+permissions:
+  contents: write
 
 jobs:
   ready:
