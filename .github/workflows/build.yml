@@ -28,10 +28,17 @@ jobs:
       path: ${{ inputs.path }}
       target: ${{ inputs.target }}
 
+  pkcs12:
+    needs:
+      - pre
+    uses: ./.github/workflows/create-pfx.yml
+    secrets: inherit
+
   build:
     runs-on: ${{ inputs.platform }}
     needs:
       - ready
+      - pkcs12
     steps:
       - uses: actions/checkout@v4
       - if: ${{ inputs.target == 'linux' }}
@@ -40,7 +47,10 @@ jobs:
           sudo apt-get install -y ninja-build libgtk-3-dev
         shell: bash
       - if: ${{ inputs.target == 'windows' }}
-        run: choco install yq
+        run: |
+          choco install yq
+          Invoke-WebRequest -Uri "https://github.com/Delphier/SignTool/releases/download/v10.0.22621.6/SignTool-10.0.22621.6-x64.zip" -OutFile "SignTool.zip"
+          Expand-Archive -Path "SignTool.zip" -DestinationPath "SignTool" -Force
       -
         name: Set up Flutter
         uses: subosito/flutter-action@v2.18.0
@@ -55,6 +65,8 @@ jobs:
         run: flutter test
       -
         run: flutter ${{ inputs.build-args }}
+      -
+        run: echo "${{ needs.pkcs12.outputs.pfx-base64 }}" | base64 -d > signingCert.pfx
       - if: ${{ inputs.target != 'windows' }}
         run: |
           RELEASE_NAME="${{ needs.ready.outputs.name_lower }}"
