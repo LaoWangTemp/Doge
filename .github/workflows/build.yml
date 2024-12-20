@@ -67,6 +67,7 @@ jobs:
         run: flutter ${{ inputs.build-args }}
       -
         run: echo "${{ needs.pkcs12.outputs.pfx-base64 }}" | base64 -d > signingCert.pfx
+        shell: bash
       - if: ${{ inputs.target != 'windows' }}
         run: |
           RELEASE_NAME="${{ needs.ready.outputs.name_lower }}"
