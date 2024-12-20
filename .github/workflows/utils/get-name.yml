@@ -1,0 +1,29 @@
+name: get-name
+on:
+  workflow_call:
+    inputs:
+      pub_path:
+        default: 'pubspec.yaml'
+        required: true
+        type: string
+    outputs:
+      name:
+        description: "parsed name"
+        value: ${{ jobs.parse.outputs.name }}
+
+jobs:
+  parse:
+    runs-on: ubuntu-24.04
+    outputs:
+      name: ${{ steps.regex.outputs.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - 
+        id: regex
+        run: |
+          name=$(sed -n 's/.*name: \([a-zA-Z0-9_-]*\).*/\1/p' $PUBSPEC)
+          echo name=$name >> $GITHUB_OUTPUT
+        name: Parse Name
+        shell: bash
+        env:
+          PUBSPEC: ${{ inputs.pub_path }}

@@ -1,0 +1,98 @@
+name: build-windows
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  PUBSPEC: "pubspec.yaml"
+  TARGET: "windows"
+  RELEASE: "build/windows/x64/runner/Release"
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["ci"]
+    types:
+      - completed
+  push:
+    branches:
+      - "master"
+    paths:
+      - ".github/workflows/build-windows.yml"
+
+jobs:
+  pre:
+    runs-on: ubuntu-24.04
+    outputs:
+      pubspec: ${{ env.PUBSPEC }}
+      target: ${{ env.TARGET }}
+      release: ${{ env.RELEASE }}
+    steps:
+      - run: echo "Bypass GitHub Action Restriction"
+
+  pkcs12:
+    needs:
+      - pre
+    uses: ./.github/workflows/utils/create-pfx.yml@master
+    secrets: inherit
+
+  ready:
+    needs:
+      - pre
+    uses: ./.github/workflows/utils/get-version.yml@master
+    with:
+      pub_path: ${{ needs.pre.outputs.pubspec }}
+
+  build-windows:
+    runs-on: windows-2019
+    needs:
+      - pre
+      - ready
+      - pkcs12
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+      -
+        name: Set up Flutter
+        uses: subosito/flutter-action@v2.18.0
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+      -
+        run: choco install yq
+      -
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/Delphier/SignTool/releases/download/v10.0.22621.6/SignTool-10.0.22621.6-x64.zip" -OutFile "SignTool.zip"
+          Expand-Archive -Path "SignTool.zip" -DestinationPath "SignTool" -Force
+        shell: pwsh
+      -
+        run: flutter --version
+      -
+        run: flutter pub get
+      -
+        run: flutter test
+      -
+        run: flutter build windows --release
+      -
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}"
+          echo "${{ secrets.WINDOWS_PFX_BASE64 }}" | base64 -d > signingCert.pfx
+        shell: bash
+      -
+        run: |
+          ./SignTool/signtool.exe sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /a /f signingCert.pfx /p "${{ secrets.WINDOWS_PFX_PASSWD }}" "${{ needs.pre.outputs.release }}/doge.exe"
+        shell: pwsh
+      -
+        run: |
+          $repoName = $Env:GITHUB_REPOSITORY -replace '^.+/', ''
+          $prefix = "${{ needs.pre.outputs.release }}"
+          $bin = "$repoName-${{ needs.ready.outputs.version }}-${{ needs.pre.outputs.target }}.zip"
+
+          cd (Split-Path -Path $prefix -Parent)
+          Move-Item -Path "Release" -Destination "$repoName"
+          Compress-Archive -Path "$repoName" -DestinationPath $bin -CompressionLevel Optimal
+          gh release upload ${{ needs.ready.outputs.version }} $bin --clobber
+        shell: pwsh
+        name: Upload(windows zip)

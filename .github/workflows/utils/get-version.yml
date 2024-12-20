@@ -1,0 +1,30 @@
+name: get-version
+
+on:
+  workflow_call:
+    inputs:
+      pub_path:
+        default: 'pubspec.yaml'
+        required: true
+        type: string
+    outputs:
+      version:
+        description: "parsed version"
+        value: ${{ jobs.parse.outputs.version }}
+
+jobs:
+  parse:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.regex.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - 
+        id: regex
+        run: |
+          version=$(sed -n 's/.*version: \([0-9.]*\).*/\1/p' $PUBSPEC)
+          echo version=$version >> $GITHUB_OUTPUT
+        name: Parse Version
+        shell: bash
+        env:
+          PUBSPEC: ${{ inputs.pub_path }}
