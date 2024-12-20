@@ -23,18 +23,18 @@ jobs:
       pubspec: ${{ env.PUBSPEC }}
     steps:
       - run: echo "Bypass GitHub Action Restriction"
-  ready-version:
+  ready:
     needs:
       - pre
-    uses: ./.github/workflows/get-version.yml
+    uses: ./.github/workflows/get-info.yml
     with:
       pub_path: ${{ needs.pre.outputs.pubspec }}
   tag:
     needs:
-      - ready-version
+      - ready
     uses: ./.github/workflows/create-tag.yml
     with:
-      version: ${{ needs.ready-version.outputs.version }}
+      version: ${{ needs.ready.outputs.version }}
   release:
     needs:
       - tag
