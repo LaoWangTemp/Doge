@@ -35,15 +35,15 @@ jobs:
       matrix:
         target: [ios, android, macos, linux, web, windows]
         include:
-          - target: ios
-            platform: "macos-latest"
-            build-args: "build ios --release --no-codesign"
           - target: macos
             platform: "macos-latest"
             build-args: "build macos --release"
+          - target: ios
+            platform: "macos-latest"
+            build-args: "build ios --release --no-codesign"
           - target: android
             platform: "ubuntu-20.04"
-            build-args: "build ios --release --no-codesign"
+            build-args: "build apk --release"
           - target: linux
             platform: "ubuntu-20.04"
             build-args: "build linux --release"
