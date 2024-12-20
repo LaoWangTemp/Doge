@@ -29,28 +29,13 @@ jobs:
     steps:
       - run: echo "Bypass GitHub Action Restriction"
 
-  ready-version:
+  ready:
     needs:
       - pre
-    uses: ./.github/workflows/get-version.yml
+    uses: ./.github/workflows/get-info.yml
     with:
-      pub_path: ${{ needs.pre.outputs.pubspec }}
-
-  ready-name:
-    needs:
-      - pre
-    uses: ./.github/workflows/get-name.yml
-    with:
-      pub_path: ${{ needs.pre.outputs.pubspec }}
-
-  ready-path:
-    needs:
-      - pre
-      - ready-name
-    uses: ./.github/workflows/get-path.yml
-    with:
+      path: ${{ needs.pre.outputs.pubspec }}
       target: ${{ needs.pre.outputs.target }}
-      name: ${{ needs.ready-name.outputs.name_lower }}
 
   pkcs12:
     needs:
@@ -62,9 +47,7 @@ jobs:
     runs-on: windows-2019
     needs:
       - pre
-      - ready-version
-      - ready-name
-      - ready-path
+      - ready
       - pkcs12
     steps:
       -
@@ -93,22 +76,22 @@ jobs:
         run: flutter build windows --release
       -
         run: |
-          RELEASE_NAME="${{ needs.ready-name.outputs.name_lower }}"
+          RELEASE_NAME="${{ needs.ready.outputs.name_lower }}"
           echo "${{ secrets.WINDOWS_PFX_BASE64 }}" | base64 -d > signingCert.pfx
         shell: bash
       -
         run: |
-          ./SignTool/signtool.exe sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /a /f signingCert.pfx /p "${{ secrets.WINDOWS_PFX_PASSWD }}" "${{ needs.ready-path.outputs.release }}/doge.exe"
+          ./SignTool/signtool.exe sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /a /f signingCert.pfx /p "${{ secrets.WINDOWS_PFX_PASSWD }}" "${{ needs.ready.outputs.release }}/doge.exe"
         shell: pwsh
       -
         run: |
           $repoName = $Env:GITHUB_REPOSITORY -replace '^.+/', ''
-          $prefix = "${{ needs.ready-path.outputs.release }}"
-          $bin = "$repoName-${{ needs.ready-version.outputs.version }}-${{ needs.pre.outputs.target }}.zip"
+          $prefix = "${{ needs.ready.outputs.release }}"
+          $bin = "$repoName-${{ needs.ready.outputs.version }}-${{ needs.pre.outputs.target }}.zip"
 
           cd (Split-Path -Path $prefix -Parent)
           Move-Item -Path "Release" -Destination "$repoName"
           Compress-Archive -Path "$repoName" -DestinationPath $bin -CompressionLevel Optimal
-          gh release upload ${{ needs.ready-version.outputs.version }} $bin --clobber
+          gh release upload ${{ needs.ready.outputs.version }} $bin --clobber
         shell: pwsh
         name: Upload(windows zip)

@@ -27,36 +27,19 @@ jobs:
     steps:
       - run: echo "Bypass GitHub Action Restriction"
 
-  ready-version:
+  ready:
     needs:
       - pre
-    uses: ./.github/workflows/get-version.yml
+    uses: ./.github/workflows/get-info.yml
     with:
-      pub_path: ${{ needs.pre.outputs.pubspec }}
-
-  ready-name:
-    needs:
-      - pre
-    uses: ./.github/workflows/get-name.yml
-    with:
-      pub_path: ${{ needs.pre.outputs.pubspec }}
-
-  ready-path:
-    needs:
-      - pre
-      - ready-name
-    uses: ./.github/workflows/get-path.yml
-    with:
+      path: ${{ needs.pre.outputs.pubspec }}
       target: ${{ needs.pre.outputs.target }}
-      name: ${{ needs.ready-name.outputs.name_lower }}
 
   build-mobile:
     runs-on: macos-latest
     needs:
       - pre
-      - ready-version
-      - ready-name
-      - ready-path
+      - ready
     strategy:
       matrix:
         target: [ios, android]
@@ -90,27 +73,27 @@ jobs:
       - 
         if: matrix.target == 'android'
         run: |
-          RELEASE_NAME="${{ needs.ready-name.outputs.name_lower }}"
-          PREFIX="{{ needs.ready-path.outputs.release }}"
+          RELEASE_NAME="${{ needs.ready.outputs.name_lower }}"
+          PREFIX="{{ needs.ready.outputs.release }}"
           EXTENSION="${PREFIX##*.}"
-          BIN="$RELEASE_NAME-${{ needs.ready-version.outputs.version }}-${{ matrix.target }}.$EXTENSION"
+          BIN="$RELEASE_NAME-${{ needs.ready.outputs.version }}-${{ matrix.target }}.$EXTENSION"
 
-          mv "{{ needs.ready-path.outputs.release }}" $BIN
-          gh release upload ${{ needs.ready-version.outputs.version }} $BIN --clobber
+          mv "{{ needs.ready.outputs.release }}" $BIN
+          gh release upload ${{ needs.ready.outputs.version }} $BIN --clobber
 
         shell: bash
         name: Upload
       - 
         if: matrix.target == 'ios'
         run: |
-          RELEASE_NAME="${{ needs.ready-name.outputs.name_lower }}"
-          PREFIX="{{ needs.ready-path.outputs.release }}"
+          RELEASE_NAME="${{ needs.ready.outputs.name_lower }}"
+          PREFIX="{{ needs.ready.outputs.release }}"
           EXTENSION="${PREFIX##*.}"
-          BIN="$RELEASE_NAME-${{ needs.ready-version.outputs.version }}-${{ matrix.target }}"
+          BIN="$RELEASE_NAME-${{ needs.ready.outputs.version }}-${{ matrix.target }}"
 
-          mv "{{ needs.ready-path.outputs.release }}" $BIN.$EXTENSION
+          mv "{{ needs.ready.outputs.release }}" $BIN.$EXTENSION
           mkdir -p dist
           hdiutil create -volname "$BIN" -srcfolder "$BIN.$EXTENSION" -ov -format UDZO "$BIN.dmg"
-          gh release upload ${{ needs.ready-version.outputs.version }} $BIN.dmg --clobber
+          gh release upload ${{ needs.ready.outputs.version }} $BIN.dmg --clobber
         shell: bash
         name: Upload
