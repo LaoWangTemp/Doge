@@ -83,11 +83,11 @@ jobs:
           $bin = "${{ needs.ready.outputs.release }}/${{ needs.ready.outputs.name_full }}.exe"
 
           Move-Item -Path "$raw" "$bin"
-          ./SignTool/signtool.exe sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /a /f signingCert.pfx /p "${{ secrets.WINDOWS_PFX_PASSWD }}" ""$bin""
+          ./SignTool/signtool.exe sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /a /f signingCert.pfx /p "${{ secrets.WINDOWS_PFX_PASSWD }}" "$bin"
 
-          cd (Split-Path -Path ${{ needs.ready.outputs.release }} -Parent)
+          cd (Split-Path -Path "${{ needs.ready.outputs.release }}" -Parent)
           Move-Item -Path "Release" -Destination "${{ needs.ready.outputs.name_full }}"
           Compress-Archive -Path "${{ needs.ready.outputs.name_full }}" -DestinationPath $zip -CompressionLevel Optimal
-          gh release upload ${{ needs.ready.outputs.version }} $zip --clobber
+          gh release upload "${{ needs.ready.outputs.version }}" $zip --clobber
         shell: pwsh
         name: Upload(windows zip)
