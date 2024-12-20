@@ -60,7 +60,7 @@ jobs:
               release="build/ios/Release-iphoneos/Runner.app"
               ;;
             "android")
-              release="build/app/outputs/flutter-apk/app-release.apk"
+              release="build/app/outputs/apk/release/app-release.apk"
               ;;
             "linux")
               release="build/linux/x64/release/bundle"
