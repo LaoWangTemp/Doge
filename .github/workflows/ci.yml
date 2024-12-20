@@ -28,7 +28,7 @@ jobs:
       - pre
     uses: ./.github/workflows/get-info.yml
     with:
-      pub_path: ${{ needs.pre.outputs.pubspec }}
+      path: ${{ needs.pre.outputs.pubspec }}
   tag:
     needs:
       - ready
