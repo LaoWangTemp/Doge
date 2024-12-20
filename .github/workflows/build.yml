@@ -70,7 +70,7 @@ jobs:
           RELEASE_NAME="${{ needs.ready.outputs.name_lower }}"
           PREFIX="${{ needs.ready.outputs.release }}"
           EXTENSION="${PREFIX##*.}"
-          BIN="$RELEASE_NAME-${{ needs.ready.outputs.version }}-${{ needs.pre.outputs.target }}"
+          BIN="$RELEASE_NAME-${{ needs.ready.outputs.version }}-${{ inputs.target }}"
 
           echo $RELEASE_NAME
           echo $PREFIX
