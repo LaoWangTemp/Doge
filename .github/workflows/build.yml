@@ -11,10 +11,15 @@ on:
         required: true
         type: string
         description: "Build target (android, ios, linux, macos, windows, web)"
+      build-args:
+        required: true
+        type: string
+        description: "Flutter Building Args"
       platform:
         required: true
         type: string
         description: "Running Platform"
+
 
 jobs:
   ready:

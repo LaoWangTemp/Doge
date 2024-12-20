@@ -33,14 +33,29 @@ jobs:
       - pre
     strategy:
       matrix:
-        target: [ios, android]
+        target: [ios, android, macos, linux, web, windows]
         include:
           - target: ios
             platform: "macos-latest"
-          - target: android
+            build-args: "build ios --release --no-codesign"
+          - target: macos
             platform: "macos-latest"
+            build-args: "build macos --release"
+          - target: android
+            platform: "ubuntu-20.04"
+            build-args: "build ios --release --no-codesign"
+          - target: linux
+            platform: "ubuntu-20.04"
+            build-args: "build linux --release"
+          - target: web
+            platform: "ubuntu-20.04"
+            build-args: "build web --release"
+          - target: windows
+            platform: "windows-2019"
+            build-args: "build windows --release"
     uses: ./.github/workflows/build.yml
     with:
       path: ${{ needs.pre.outputs.pubspec }}
       target: ${{ matrix.target }}
+      build-args: ${{ matrix.build-args }}
       platform: ${{ matrix.platform }}
