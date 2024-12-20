@@ -78,10 +78,6 @@ jobs:
 
           mv "${{ needs.ready.outputs.release }}" "$BIN"
           hdiutil create -volname "${{ needs.ready.outputs.name_full }}" -srcfolder "$BIN" -ov -format UDZO "$RELEASE"
-
-          echo "$RELEASE"
-          echo "$BIN"
-          ls -al
           gh release upload ${{ needs.ready.outputs.version }} "$RELEASE.dmg" --clobber
         shell: bash
         name: Upload(mac/ios img)
@@ -101,7 +97,7 @@ jobs:
         run: |
           RELEASE="${{ needs.ready.outputs.name_full }}-${{ needs.ready.outputs.version }}-${{ inputs.target }}.apk"
 
-          mv "{{ needs.ready.outputs.release }}" "$RELEASE"
+          mv "${{ needs.ready.outputs.release }}" "$RELEASE"
           gh release upload ${{ needs.ready.outputs.version }} "$RELEASE" --clobber
 
         shell: bash
