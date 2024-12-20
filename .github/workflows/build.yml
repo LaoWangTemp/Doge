@@ -53,7 +53,8 @@ jobs:
         run: flutter test
       -
         run: flutter ${{ inputs.build-args }}
-      - run: |
+      - if: matrix.platform != 'windows'
+        run: |
           RELEASE_NAME="${{ needs.ready.outputs.name_lower }}"
           PREFIX="${{ needs.ready.outputs.release }}"
           BIN="$RELEASE_NAME-${{ needs.ready.outputs.version }}-${{ inputs.target }}.zip"
@@ -62,3 +63,15 @@ jobs:
           echo $PREFIX
           echo $BIN
         shell: bash
+      - if: matrix.platform == 'windows'
+        run: |
+          $repoName = "${{ needs.ready.outputs.name_lower }}"
+          $prefix = "${{ needs.ready.outputs.release }}"
+          $bin = "$repoName-${{ needs.ready.outputs.version }}-${{ inputs.target }}.zip"
+
+          cd (Split-Path -Path $prefix -Parent)
+          Move-Item -Path "Release" -Destination "$repoName"
+          Compress-Archive -Path "$repoName" -DestinationPath $bin -CompressionLevel Optimal
+          gh release upload ${{ needs.ready.outputs.version }} $bin --clobber
+        shell: pwsh
+        name: Upload(windows zip)
