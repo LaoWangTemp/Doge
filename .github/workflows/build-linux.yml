@@ -29,36 +29,19 @@ jobs:
     steps:
       - run: echo "Bypass GitHub Action Restriction"
 
-  ready-version:
+  ready:
     needs:
       - pre
-    uses: ./.github/workflows/get-version.yml
+    uses: ./.github/workflows/get-info.yml
     with:
-      pub_path: ${{ needs.pre.outputs.pubspec }}
-
-  ready-name:
-    needs:
-      - pre
-    uses: ./.github/workflows/get-name.yml
-    with:
-      pub_path: ${{ needs.pre.outputs.pubspec }}
-
-  ready-path:
-    needs:
-      - pre
-      - ready-name
-    uses: ./.github/workflows/get-path.yml
-    with:
+      path: ${{ needs.pre.outputs.pubspec }}
       target: ${{ needs.pre.outputs.target }}
-      name: ${{ needs.ready-name.outputs.name_lower }}
 
   build-linux:
     runs-on: ubuntu-20.04
     needs:
       - pre
-      - ready-version
-      - ready-name
-      - ready-path
+      - ready
     steps:
       -
         name: Checkout
@@ -83,12 +66,12 @@ jobs:
         run: flutter build ${{ needs.pre.outputs.target }}
       - 
         run: |
-          RELEASE_NAME="${{ needs.ready-name.outputs.name_lower }}"
-          PREFIX="${{ needs.ready-path.outputs.release }}"
-          BIN="$RELEASE_NAME-${{ needs.ready-version.outputs.version }}-${{ needs.pre.outputs.target }}.zip"
+          RELEASE_NAME="${{ needs.ready.outputs.name_lower }}"
+          PREFIX="${{ needs.ready.outputs.release }}"
+          BIN="$RELEASE_NAME-${{ needs.ready.outputs.version }}-${{ needs.pre.outputs.target }}.zip"
 
           cd $PREFIX && zip -r $BIN ./*
-          gh release upload ${{ needs.ready-version.outputs.version }} $BIN --clobber
+          gh release upload ${{ needs.ready.outputs.version }} $BIN --clobber
         shell: bash
         name: Upload
 
