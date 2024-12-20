@@ -71,20 +71,10 @@ jobs:
       -
         run: echo "${{ needs.pkcs12.outputs.pfx-base64 }}" | base64 -d > signingCert.pfx
         shell: bash
-      - if: ${{ inputs.target != 'windows' }}
-        run: |
-          RELEASE_NAME="${{ needs.ready.outputs.name_lower }}"
-          PREFIX="${{ needs.ready.outputs.release }}"
-          BIN="$RELEASE_NAME-${{ needs.ready.outputs.version }}-${{ inputs.target }}.zip"
-
-          echo $RELEASE_NAME
-          echo $PREFIX
-          echo $BIN
-        shell: bash
       - if: ${{ inputs.platform == 'macos-latest' }}
         run: |
           BIN="${{ needs.ready.outputs.name_full }}.app"
-          RELEASE="${{ needs.ready.outputs.name_full }}-${{ needs.ready.outputs.version }}-${{ inputs.target }}.img"
+          RELEASE="${{ needs.ready.outputs.name_full }}-${{ needs.ready.outputs.version }}-${{ inputs.target }}"
 
           mv "${{ needs.ready.outputs.release }}" "$BIN"
           hdiutil create -volname "${{ needs.ready.outputs.name_full }}" -srcfolder "$BIN" -ov -format UDZO "$RELEASE"
@@ -92,7 +82,7 @@ jobs:
           echo "$RELEASE"
           echo "$BIN"
           ls -al
-          gh release upload ${{ needs.ready.outputs.version }} "$RELEASE" --clobber
+          gh release upload ${{ needs.ready.outputs.version }} "$RELEASE.img" --clobber
         shell: bash
         name: Upload(mac/ios img)
 
