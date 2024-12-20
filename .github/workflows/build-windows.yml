@@ -34,13 +34,13 @@ jobs:
   pkcs12:
     needs:
       - pre
-    uses: ./.github/workflows/utils/create-pfx.yml
+    uses: ./.github/workflows/create-pfx.yml
     secrets: inherit
 
   ready:
     needs:
       - pre
-    uses: ./.github/workflows/utils/get-version.yml
+    uses: ./.github/workflows/get-version.yml
     with:
       pub_path: ${{ needs.pre.outputs.pubspec }}
 
