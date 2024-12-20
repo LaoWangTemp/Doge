@@ -27,28 +27,44 @@ jobs:
     steps:
       - run: echo "Bypass GitHub Action Restriction"
 
-  ready:
+  ready-version:
     needs:
       - pre
     uses: ./.github/workflows/get-version.yml
     with:
       pub_path: ${{ needs.pre.outputs.pubspec }}
 
+  ready-name:
+    needs:
+      - pre
+    uses: ./.github/workflows/get-name.yml
+    with:
+      pub_path: ${{ needs.pre.outputs.pubspec }}
+
+  ready-path:
+    needs:
+      - pre
+      - ready-name
+    uses: ./.github/workflows/get-path.yml
+    with:
+      target: ${{ needs.pre.outputs.target }}
+      name: ${{ needs.ready-name.outputs.name_lower }}
+
   build-mobile:
     runs-on: macos-latest
     needs:
       - pre
-      - ready
+      - ready-version
+      - ready-name
+      - ready-path
     strategy:
       matrix:
         target: [ios, android]
         include:
           - target: ios
             build: "build ios --release --no-codesign"
-            release: "build/ios/Release-iphoneos/Runner.app"
           - target: android
             build: "build apk --release"
-            release: "build/app/outputs/apk/release/app-release.apk"
 
     steps:
       -
@@ -74,27 +90,27 @@ jobs:
       - 
         if: matrix.target == 'android'
         run: |
-          REPO_NAME="${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}"
-          PREFIX="${{ matrix.release }}"
+          RELEASE_NAME="${{ needs.ready-name.outputs.name_lower }}"
+          PREFIX="{{ needs.ready-path.outputs.release }}"
           EXTENSION="${PREFIX##*.}"
-          BIN="$REPO_NAME-${{ needs.ready.outputs.version }}-${{ matrix.target }}.$EXTENSION"
+          BIN="$RELEASE_NAME-${{ needs.ready-version.outputs.version }}-${{ matrix.target }}.$EXTENSION"
 
-          mv "${{ matrix.release }}" $BIN
-          gh release upload ${{ needs.ready.outputs.version }} $BIN --clobber
+          mv "{{ needs.ready-path.outputs.release }}" $BIN
+          gh release upload ${{ needs.ready-version.outputs.version }} $BIN --clobber
 
         shell: bash
         name: Upload
       - 
         if: matrix.target == 'ios'
         run: |
-          REPO_NAME="${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}"
-          PREFIX="${{ matrix.release }}"
+          RELEASE_NAME="${{ needs.ready-name.outputs.name_lower }}"
+          PREFIX="{{ needs.ready-path.outputs.release }}"
           EXTENSION="${PREFIX##*.}"
-          BIN="$REPO_NAME-${{ needs.ready.outputs.version }}-${{ matrix.target }}"
+          BIN="$RELEASE_NAME-${{ needs.ready-version.outputs.version }}-${{ matrix.target }}"
 
-          mv "${{ matrix.release }}" $BIN.$EXTENSION
+          mv "{{ needs.ready-path.outputs.release }}" $BIN.$EXTENSION
           mkdir -p dist
           hdiutil create -volname "$BIN" -srcfolder "$BIN.$EXTENSION" -ov -format UDZO "$BIN.dmg"
-          gh release upload ${{ needs.ready.outputs.version }} $BIN.dmg --clobber
+          gh release upload ${{ needs.ready-version.outputs.version }} $BIN.dmg --clobber
         shell: bash
         name: Upload

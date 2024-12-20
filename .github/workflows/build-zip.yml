@@ -27,7 +27,7 @@ jobs:
     steps:
       - run: echo "Bypass GitHub Action Restriction"
 
-  ready:
+  ready-version:
     needs:
       - pre
     uses: ./.github/workflows/get-version.yml
@@ -38,7 +38,7 @@ jobs:
     runs-on: macos-latest
     needs:
       - pre
-      - ready
+      - ready-version
     strategy:
       matrix:
         target: [macos, app, ios]
@@ -73,11 +73,11 @@ jobs:
         shell: bash
       - 
         run: |
-          REPO_NAME="${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}"
+          RELEASE_NAME="${{ needs.ready-name.outputs.name_lower }}"
           PREFIX="${{ matrix.target }}"
-          BIN="$REPO_NAME-${{ needs.ready.outputs.version }}-${{ matrix.target }}.zip"
+          BIN="$RELEASE_NAME-${{ needs.ready-version.outputs.version }}-${{ matrix.target }}.zip"
           ls -al build
           cd build && zip -r $BIN $PREFIX
-          gh release upload ${{ needs.ready.outputs.version }} $BIN --clobber
+          gh release upload ${{ needs.ready-version.outputs.version }} $BIN --clobber
         shell: bash
         name: Upload

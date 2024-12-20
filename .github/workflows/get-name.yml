@@ -7,22 +7,28 @@ on:
         required: true
         type: string
     outputs:
-      name:
+      name_full:
         description: "parsed name"
-        value: ${{ jobs.parse.outputs.name }}
+        value: ${{ jobs.parse.outputs.name_full }}
+      name_lower:
+        description: "lowercase name"
+        value: ${{ jobs.parse.outputs.name_lower }}
 
 jobs:
   parse:
     runs-on: ubuntu-24.04
     outputs:
-      name: ${{ steps.regex.outputs.name }}
+      name_full: ${{ steps.regex.outputs.name_full }}
+      name_lower: ${{ steps.regex.outputs.name_lower }}
     steps:
       - uses: actions/checkout@v4
       - 
         id: regex
         run: |
-          name=$(sed -n 's/.*name: \([a-zA-Z0-9_-]*\).*/\1/p' $PUBSPEC)
-          echo name=$name >> $GITHUB_OUTPUT
+          name_full=$(sed -n 's/.*name: \([a-zA-Z0-9_-]*\).*/\1/p' $PUBSPEC)
+          name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
+          echo name_full=$name_full >> $GITHUB_OUTPUT
+          echo name_lower=$name_lower >> $GITHUB_OUTPUT
         name: Parse Name
         shell: bash
         env:
