@@ -42,7 +42,7 @@ jobs:
             platform: macos-latest
             build-args: "build ios --release --no-codesign"
           - target: android
-            platform: ubuntu-20.04
+            platform: ubuntu-24.04
             build-args: "build apk --release"
           - target: linux
             platform: ubuntu-20.04
